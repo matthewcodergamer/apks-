@@ -54,7 +54,7 @@
 
     const-string v1, "LOG"
 
-    invoke-virtual {v0, v1}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
+    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
     const-string v1, "turbo_debug_log"
 
@@ -64,11 +64,15 @@
 
     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setTextColor(I)V
 
-    const v1, 0xcc000000
+    const/high16 v1, 0x41800000
+
+    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setTextSize(F)V
+
+    const v1, 0xffff0000
 
     invoke-virtual {v0, v1}, Landroid/view/View;->setBackgroundColor(I)V
 
-    const/16 v1, 0x10
+    const/16 v1, 0x18
 
     invoke-virtual {v0, v1, v1, v1, v1}, Landroid/widget/TextView;->setPadding(IIII)V
 
@@ -80,9 +84,11 @@
 
     invoke-virtual {v0, v2}, Landroid/view/View;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V
 
-    const v1, 0x1020002
+    invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
 
-    invoke-virtual {p0, v1}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+    move-result-object v1
+
+    invoke-virtual {v1}, Landroid/view/Window;->getDecorView()Landroid/view/View;
 
     move-result-object v1
 
@@ -90,23 +96,37 @@
 
     check-cast v1, Landroid/view/ViewGroup;
 
-    new-instance v2, Landroid/widget/FrameLayout$LayoutParams;
+    new-instance v3, Landroid/widget/FrameLayout$LayoutParams;
 
-    const/4 v3, -0x2
+    const/4 v4, -0x2
 
-    invoke-direct {v2, v3, v3}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
+    invoke-direct {v3, v4, v4}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
 
-    const/16 v3, 0x30
+    const/16 v4, 0x30
 
-    iput v3, v2, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
+    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
 
-    const/16 v3, 0x10
+    const/16 v4, 0x18
 
-    iput v3, v2, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
+    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
 
-    iput v3, v2, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
+    const/16 v4, 0xc8
 
-    invoke-virtual {v1, v0, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
+
+    invoke-virtual {v1, v0, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    const-string v1, "Turbo log ready"
+
+    const/4 v3, 0x1
+
+    invoke-static {p0, v1, v3}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Landroid/widget/Toast;->show()V
+
+    invoke-virtual {v2, v0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->onClick(Landroid/view/View;)V
 
     :done
     return-void
@@ -218,15 +238,19 @@
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setMaxLines(I)V
 
+    invoke-virtual {v2, p0}, Landroid/widget/TextView;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V
+
     invoke-virtual {v1, v2}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
 
     iput-object v2, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
 
     iput-object v1, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
 
-    const v3, 0x1020002
+    invoke-virtual {v0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
 
-    invoke-virtual {v0, v3}, Landroid/app/Activity;->findViewById(I)Landroid/view/View;
+    move-result-object v3
+
+    invoke-virtual {v3}, Landroid/view/Window;->getDecorView()Landroid/view/View;
 
     move-result-object v3
 
@@ -245,6 +269,10 @@
     const/16 v5, 0x50
 
     iput v5, v4, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
+
+    const/16 v5, 0x78
+
+    iput v5, v4, Landroid/widget/FrameLayout$LayoutParams;->bottomMargin:I
 
     invoke-virtual {v3, v1, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
