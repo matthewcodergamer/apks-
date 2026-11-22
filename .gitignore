@@ -1,0 +1,4 @@
+decompiled/
+reports/
+__pycache__/
+*.pyc

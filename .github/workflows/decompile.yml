@@ -1,0 +1,81 @@
+name: Decompile and analyze Turbo VPN ads
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Turbo VPN.apk'
+      - '.github/workflows/decompile.yml'
+      - 'scripts/**'
+      - 'README.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turbo-vpn-ad-analysis
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install analysis tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends aapt apktool jq ripgrep unzip zip
+          JADX_VERSION=1.5.1
+          curl -fsSL --retry 3 -o /tmp/jadx.zip \
+            "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip"
+          sudo unzip -q /tmp/jadx.zip -d /opt/jadx
+          sudo chmod +x /opt/jadx/bin/jadx
+          /opt/jadx/bin/jadx --version
+
+      - name: Fingerprint APK
+        run: |
+          mkdir -p reports
+          sha256sum "Turbo VPN.apk" | tee reports/apk.sha256
+          aapt dump badging "Turbo VPN.apk" | tee reports/badging.txt
+
+      - name: Decode manifest and resources
+        run: apktool d -f -s "Turbo VPN.apk" -o decompiled/apktool
+
+      - name: Extract assets
+        run: |
+          mkdir -p decompiled/assets
+          unzip -q "Turbo VPN.apk" 'assets/*' -d decompiled/assets
+
+      - name: Decompile Java bytecode
+        run: |
+          java -Xms1g -Xmx8g -cp "/opt/jadx/lib/*" jadx.cli.JadxCLI \
+            --no-res --threads-count 8 \
+            -d decompiled/jadx "Turbo VPN.apk" 2>&1 | tee reports/jadx.log
+
+      - name: Generate ad-flow report
+        run: python3 scripts/analyze_ads.py
+
+      - name: Print report summary
+        run: cat reports/findings.md
+
+      - name: Upload decompiled sources and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: turbo-vpn-4.3.2.2-analysis
+          path: |
+            decompiled
+            reports
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
