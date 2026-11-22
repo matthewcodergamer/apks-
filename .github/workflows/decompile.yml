@@ -2,13 +2,6 @@ name: Decompile and analyze Turbo VPN ads
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'Turbo VPN.apk'
-      - '.github/workflows/decompile.yml'
-      - 'scripts/**'
-      - 'README.md'
 
 permissions:
   contents: read
