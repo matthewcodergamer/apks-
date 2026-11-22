@@ -27,16 +27,29 @@ The workflow:
    - `co.allconnected.lib.ad.AdShow.k(boolean)` — full-screen ad list
    - `D5.H.D()` — AppLuck hover-ad refresh
    - `VpnMainActivity.r4(String)` — `HomeAdActivity` deep-link launcher
-3. Unlocks the VIP server locations:
+3. Restores the API keys that `libovpnutil.so` normally derives from the
+   original signing certificate. Re-signing makes the native check return
+   `null`, which breaks activation and the server list:
+   - `NativeUtils.getApiCipherKey(Context)` — API body-encryption key
+   - `NativeUtils.getApiHeaderKey(Context)` — API auth-header key
+   - `NativeUtils.getLocalCipherKey(Context)` — local cache key
+4. Unlocks the VIP server locations:
    - `k2.A.v()` — always report a VIP user
    - `k2.A.q(Context)` — use the VIP server lists
    - `k2.A.i()` — report the maximum VIP level
    - `k2.A.t()` — disable trial-only restrictions
    - `k2.A.e()` — prevent VIP-list expiry cleanup
-4. Reassembles the two DEX files and replaces only those entries in the APK.
-5. Removes the original signature, zipaligns, and signs with a debug key.
-6. Verifies the signature, alignment, native libraries, and all eleven stubs.
-7. Uploads `turbo-vpn-4.3.2.2-arm64-ads-removed.apk` plus `SHA256SUMS`.
+   - `ReqServersListBean.setIsVip(boolean)` — keep the server-list request on
+     the free-user path so the server returns a usable list
+5. Enables the app's own debug logging (`g2.g.k(int)`) and injects a small
+   **LOG** button into `VpnMainActivity`. Tapping it opens the last 800 logcat
+   lines with a **Copy** action, so connection/API errors can be captured on the
+   device without ADB.
+6. Reassembles the two DEX files and replaces only those entries in the APK.
+7. Removes the original signature, zipaligns, and signs with a debug key.
+8. Verifies the signature, alignment, native libraries, every stub, the
+   injected class, and the LOG button hook.
+9. Uploads `turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk` plus `SHA256SUMS`.
 
 VPN/native code and resources are left untouched. Because the APK is re-signed,
 Google/Facebook sign-in and Play Billing will not work; the VPN connection is

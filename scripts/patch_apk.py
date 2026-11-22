@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Remove Turbo VPN ad surfaces and unlock VIP locations in the complete
-4.3.2.2 arm64 APK.
+"""Remove Turbo VPN ad surfaces, unlock VIP locations, and restore the API
+keys in the complete 4.3.2.2 arm64 APK.
 
-The script disassembles the two DEX files that contain the ad and VIP code,
-replaces the targeted methods with harmless stubs, reassembles the DEX files,
-updates the APK, aligns it, and signs it with uber-apk-signer.
+The script disassembles the two DEX files that contain the ad, VIP, and API
+code, replaces the targeted methods with harmless stubs, injects a small
+in-app log viewer, reassembles the DEX files, updates the APK, aligns it, and
+signs it with uber-apk-signer.
 
-VPN/native code and resources are intentionally left untouched.
+The native libovpnutil.so derives the API encryption keys from the APK signing
+certificate and returns null after re-signing. The three NativeUtils methods
+are therefore replaced with the hard-coded keys for this package.
+
+VPN/native code and resources are otherwise left untouched.
 """
 
 from __future__ import annotations
@@ -110,6 +115,70 @@ PATCHES: dict[str, list[dict]] = {
             "body": ["return-void"],
             "why": "prevent VIP-list expiry cleanup",
         },
+        # --- diagnostics -------------------------------------------------
+        {
+            "file": "g2/g.smali",
+            "class": "Lg2/g;",
+            "method": "k",
+            "params": "I",
+            "registers": 1,
+            "body": ["const/4 v0, 0x1", "return v0"],
+            "why": "enable app debug logging for the in-app log viewer",
+        },
+        {
+            "file": "co/allconnected/lib/model/ReqServersListBean.smali",
+            "class": "Lco/allconnected/lib/model/ReqServersListBean;",
+            "method": "setIsVip",
+            "params": "Z",
+            "registers": 3,
+            "body": [
+                "const/4 v0, 0x0",
+                "iput-boolean v0, p0, Lco/allconnected/lib/model/ReqServersListBean;->isVip:Z",
+                "return-object p0",
+            ],
+            "why": "keep the server-list request on the free-user path",
+        },
+        # --- API keys ----------------------------------------------------
+        # libovpnutil.so only returns these keys when the APK carries the
+        # original signing certificate. Re-signing makes getCipherKey() return
+        # null, which breaks activation and the server list. These are the
+        # hard-coded turbovpn keys selected by the native code.
+        {
+            "file": "co/allconnected/lib/openvpn/NativeUtils.smali",
+            "class": "Lco/allconnected/lib/openvpn/NativeUtils;",
+            "method": "getApiCipherKey",
+            "params": "Landroid/content/Context;",
+            "registers": 2,
+            "body": [
+                'const-string v0, "w:SzR%Qd8.=ouuwpVz;JqNA9/]867@qj"',
+                "return-object v0",
+            ],
+            "why": "restore the API body-encryption key",
+        },
+        {
+            "file": "co/allconnected/lib/openvpn/NativeUtils.smali",
+            "class": "Lco/allconnected/lib/openvpn/NativeUtils;",
+            "method": "getApiHeaderKey",
+            "params": "Landroid/content/Context;",
+            "registers": 2,
+            "body": [
+                'const-string v0, "7Yg3gQbUjYPF3/RHVmbO3tO3H/g="',
+                "return-object v0",
+            ],
+            "why": "restore the API auth-header key",
+        },
+        {
+            "file": "co/allconnected/lib/openvpn/NativeUtils.smali",
+            "class": "Lco/allconnected/lib/openvpn/NativeUtils;",
+            "method": "getLocalCipherKey",
+            "params": "Landroid/content/Context;",
+            "registers": 2,
+            "body": [
+                'const-string v0, "43a41a300d06092a864886f70d01010505003"',
+                "return-object v0",
+            ],
+            "why": "restore the local cache key",
+        },
     ],
     "classes5.dex": [
         # --- ads ---------------------------------------------------------
@@ -133,6 +202,34 @@ PATCHES: dict[str, list[dict]] = {
         },
     ],
 }
+
+# Code inserted at the start of an existing method instead of replacing it.
+INJECTIONS: dict[str, list[dict]] = {
+    "classes5.dex": [
+        {
+            "file": "free/vpn/unblock/proxy/turbovpn/activity/VpnMainActivity.smali",
+            "class": "Lfree/vpn/unblock/proxy/turbovpn/activity/VpnMainActivity;",
+            "method": "onResume",
+            "params": "",
+            "code": [
+                "invoke-static {p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a(Landroid/app/Activity;)V"
+            ],
+            "why": "add the in-app LOG button",
+        }
+    ]
+}
+
+# Extra smali classes copied into a DEX before assembly.
+EXTRA_SMALI: dict[str, list[tuple[str, str]]] = {
+    "classes5.dex": [
+        (
+            "free/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper.smali",
+            "DebugLogHelper.smali",
+        )
+    ]
+}
+
+PATCH_DIR = Path(__file__).resolve().parent.parent / "patches"
 
 REQUIRED_LIBS = [
     "lib/arm64-v8a/libovpnutil.so",
@@ -199,6 +296,38 @@ def assert_stub(path: Path, spec: dict) -> None:
             f"expected {expected}\nactual   {actual}"
         )
     log(f"  verified {path}: {spec['method']}({spec['params']})")
+
+
+def inject_code(path: Path, spec: dict) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start, end = method_range(lines, spec["method"], spec["params"])
+    insert_at = None
+    for index in range(start + 1, end):
+        stripped = lines[index].strip()
+        if stripped.startswith(".registers") or stripped.startswith(".locals"):
+            insert_at = index + 1
+            break
+    if insert_at is None:
+        raise RuntimeError(
+            f"no .registers/.locals in {path} {spec['method']}({spec['params']})"
+        )
+    block = [f"    {instruction}" for instruction in spec["code"]]
+    lines[insert_at:insert_at] = block
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    log(f"  injected {path}: {spec['method']}({spec['params']})  [{spec['why']}]")
+
+
+def assert_injected(path: Path, spec: dict) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start, end = method_range(lines, spec["method"], spec["params"])
+    actual = [line.strip() for line in lines[start + 1 : end]]
+    for instruction in spec["code"]:
+        if instruction not in actual:
+            raise RuntimeError(
+                f"injection verification failed for {path} "
+                f"{spec['method']}({spec['params']}): missing {instruction}"
+            )
+    log(f"  verified injection {path}: {spec['method']}({spec['params']})")
 
 
 def sha256(path: Path) -> str:
@@ -270,10 +399,27 @@ def main() -> int:
         log(f"disassembling {dex} -> {smali_dir}")
         run(["baksmali", "d", work / dex, "-o", smali_dir])
 
+    for dex in list(INJECTIONS) + list(EXTRA_SMALI):
+        if dex not in PATCHES:
+            raise SystemExit(f"{dex} has injections/extra smali but no patch entry")
+
     for dex, specs in PATCHES.items():
         root = work / f"smali_{dex.removesuffix('.dex')}"
         for spec in specs:
             patch_method(root / spec["file"], spec)
+
+    for dex, entries in EXTRA_SMALI.items():
+        root = work / f"smali_{dex.removesuffix('.dex')}"
+        for relative, source in entries:
+            destination = root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(PATCH_DIR / source, destination)
+            log(f"  added {destination}")
+
+    for dex, specs in INJECTIONS.items():
+        root = work / f"smali_{dex.removesuffix('.dex')}"
+        for spec in specs:
+            inject_code(root / spec["file"], spec)
 
     build = work / "build"
     if build.exists():
@@ -357,7 +503,11 @@ def main() -> int:
         shutil.rmtree(verify_root)
     for dex, specs in PATCHES.items():
         verify_dir = verify_root / dex.removesuffix(".dex")
-        classes = ",".join(dict.fromkeys(spec["class"] for spec in specs))
+        class_names = [spec["class"] for spec in specs]
+        class_names.extend(spec["class"] for spec in INJECTIONS.get(dex, []))
+        for relative, _ in EXTRA_SMALI.get(dex, []):
+            class_names.append("L" + relative.removesuffix(".smali") + ";")
+        classes = ",".join(dict.fromkeys(class_names))
         run(
             [
                 "baksmali",
@@ -371,6 +521,12 @@ def main() -> int:
         )
         for spec in specs:
             assert_stub(verify_dir / spec["file"], spec)
+        for spec in INJECTIONS.get(dex, []):
+            assert_injected(verify_dir / spec["file"], spec)
+        for relative, _ in EXTRA_SMALI.get(dex, []):
+            if not (verify_dir / relative).is_file():
+                raise RuntimeError(f"extra class missing from signed APK: {relative}")
+            log(f"  verified extra class {relative}")
 
     with zipfile.ZipFile(signed) as archive:
         bad_entry = archive.testzip()
