@@ -1,5 +1,18 @@
 # Turbo VPN — ad removal, VIP unlock, and 4.3.2.2 analysis
 
+## Download
+
+Latest patched build:
+
+**https://github.com/matthewcodergamer/apks-/releases/download/v4.3.2.2-ads-vip/turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk**
+
+- Size: `51,361,992` bytes
+- SHA-256: `54bc670f7c45be0a037dda060b3cc6dbefd6e0b6ab43f98316f903681a82d795`
+
+Uninstall any older Turbo VPN build first (the signature is different). If the
+connection still fails, tap the **LOG** button at the top-left of the main
+screen, choose **Copy**, and send the copied log.
+
 ## Patched build (ads removed + locations unlocked)
 
 `turbo-vpn-4.3.2.2-arm64.apk` is the complete standalone arm64-v8a build used
