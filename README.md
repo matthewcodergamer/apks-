@@ -6,12 +6,13 @@ Latest patched build:
 
 **https://github.com/matthewcodergamer/apks-/releases/download/v4.3.2.2-ads-vip/turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk**
 
-- Size: `51,361,992` bytes
-- SHA-256: `54bc670f7c45be0a037dda060b3cc6dbefd6e0b6ab43f98316f903681a82d795`
+- Size: `51,357,896` bytes
+- SHA-256: `ed2e4072c65b98b262147ac2da89ec967c62366d368173ba235e4703022a5102`
 
 Uninstall any older Turbo VPN build first (the signature is different). If the
-connection still fails, tap the **LOG** button at the top-left of the main
-screen, choose **Copy**, and send the copied log.
+connection still fails, the log panel opens automatically at the bottom of the
+main screen and refreshes every 1.5 seconds. Tap **LOG** to toggle it, and
+long-press the **LOG** button or the log panel to copy the log.
 
 ## Patched build (ads removed + locations unlocked)
 
@@ -54,14 +55,18 @@ The workflow:
    - `k2.A.e()` — prevent VIP-list expiry cleanup
    - `ReqServersListBean.setIsVip(boolean)` — keep the server-list request on
      the free-user path so the server returns a usable list
-5. Enables the app's own debug logging (`g2.g.k(int)`) and injects a small
-   **LOG** button into `VpnMainActivity`. Tapping it opens the last 800 logcat
-   lines with a **Copy** action, so connection/API errors can be captured on the
-   device without ADB.
+   - `VpnServer.compareTo(VpnServer)` — sort free servers before VIP servers, so
+     the default connection uses a free server while VIP locations stay in the
+     list
+5. Enables the app's own debug logging (`g2.g.k(int)`) and injects a **LOG**
+   button into `VpnMainActivity`. The non-modal bottom overlay opens on launch
+   and refreshes the last 400 logcat lines every 1.5 seconds. Tap **LOG** to
+   toggle it; long-press **LOG** or the overlay to copy the log, so
+   connection/API errors can be captured on the device without ADB.
 6. Reassembles the two DEX files and replaces only those entries in the APK.
 7. Removes the original signature, zipaligns, and signs with a debug key.
 8. Verifies the signature, alignment, native libraries, every stub, the
-   injected class, and the LOG button hook.
+   injected classes, and the LOG button hook.
 9. Uploads `turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk` plus `SHA256SUMS`.
 
 VPN/native code and resources are left untouched. Because the APK is re-signed,
