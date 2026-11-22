@@ -225,7 +225,11 @@ EXTRA_SMALI: dict[str, list[tuple[str, str]]] = {
         (
             "free/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper.smali",
             "DebugLogHelper.smali",
-        )
+        ),
+        (
+            "free/vpn/unblock/proxy/turbovpn/debug/DebugLogTask.smali",
+            "DebugLogTask.smali",
+        ),
     ]
 }
 
