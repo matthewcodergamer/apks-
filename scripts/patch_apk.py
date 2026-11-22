@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Remove Turbo VPN ad surfaces from the complete arm64 APK.
+"""Remove Turbo VPN ad surfaces and unlock VIP locations in the complete
+4.3.2.2 arm64 APK.
 
-The script disassembles the two DEX files that contain the ad code, replaces
-six centralized ad methods with harmless stubs, reassembles the DEX files,
+The script disassembles the two DEX files that contain the ad and VIP code,
+replaces the targeted methods with harmless stubs, reassembles the DEX files,
 updates the APK, aligns it, and signs it with uber-apk-signer.
 
-It intentionally leaves VPN/native code and resources untouched.
+VPN/native code and resources are intentionally left untouched.
 """
 
 from __future__ import annotations
@@ -18,11 +19,11 @@ import sys
 import zipfile
 from pathlib import Path
 
-# Each patch replaces the entire method body.  Matching is by method name and
-# parameter descriptor, so it also tolerates R8 renaming the return type (for
-# example AdShow.h changed from Lt1/d; to Lt1/e; between 4.3.2.2 and 4.3.2).
+# Each patch replaces the entire method body. Matching is by method name and
+# parameter descriptor, so it also tolerates R8 renaming the return type.
 PATCHES: dict[str, list[dict]] = {
     "classes.dex": [
+        # --- ads ---------------------------------------------------------
         {
             "file": "co/allconnected/lib/ad/c.smali",
             "class": "Lco/allconnected/lib/ad/c;",
@@ -63,11 +64,58 @@ PATCHES: dict[str, list[dict]] = {
             ],
             "why": "full-screen ad list",
         },
+        # --- VIP / all locations ----------------------------------------
+        {
+            "file": "k2/A.smali",
+            "class": "Lk2/A;",
+            "method": "v",
+            "params": "",
+            "registers": 1,
+            "body": ["const/4 v0, 0x1", "return v0"],
+            "why": "treat user as VIP",
+        },
+        {
+            "file": "k2/A.smali",
+            "class": "Lk2/A;",
+            "method": "q",
+            "params": "Landroid/content/Context;",
+            "registers": 2,
+            "body": ["const/4 v0, 0x1", "return v0"],
+            "why": "use the VIP server lists",
+        },
+        {
+            "file": "k2/A.smali",
+            "class": "Lk2/A;",
+            "method": "i",
+            "params": "",
+            "registers": 1,
+            "body": ["const/16 v0, 0x1e", "return v0"],
+            "why": "report maximum VIP level",
+        },
+        {
+            "file": "k2/A.smali",
+            "class": "Lk2/A;",
+            "method": "t",
+            "params": "",
+            "registers": 1,
+            "body": ["const/4 v0, 0x0", "return v0"],
+            "why": "disable trial-only restrictions",
+        },
+        {
+            "file": "k2/A.smali",
+            "class": "Lk2/A;",
+            "method": "e",
+            "params": "",
+            "registers": 0,
+            "body": ["return-void"],
+            "why": "prevent VIP-list expiry cleanup",
+        },
     ],
     "classes5.dex": [
+        # --- ads ---------------------------------------------------------
         {
-            "file": "E5/H.smali",
-            "class": "LE5/H;",
+            "file": "D5/H.smali",
+            "class": "LD5/H;",
             "method": "D",
             "params": "",
             "registers": 1,
@@ -239,7 +287,7 @@ def main() -> int:
     unsigned = work / "unsigned.apk"
     shutil.copy2(apk, unsigned)
 
-    # Remove the original v1 signature.  The old v2/v3 block is invalidated by
+    # Remove the original v1 signature. The old v2/v3 block is invalidated by
     # the zip update and replaced when the APK is re-signed.
     run(
         [
@@ -256,7 +304,7 @@ def main() -> int:
         check=False,
     )
 
-    # Replace only the two patched DEX entries.  All other entries, including
+    # Replace only the two patched DEX entries. All other entries, including
     # resources.arsc and the native libraries, are copied unchanged.
     run(["zip", "-q", "-X", unsigned, *PATCHES.keys()], cwd=build)
 

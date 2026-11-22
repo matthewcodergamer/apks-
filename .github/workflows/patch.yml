@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'turbo-vpn-4.3.2-arm64.apk'
+      - 'turbo-vpn-4.3.2.2-arm64.apk'
       - 'scripts/patch_apk.py'
       - '.github/workflows/patch.yml'
 
@@ -49,8 +49,8 @@ jobs:
       - name: Disassemble, patch, reassemble, align, sign, verify
         run: |
           python3 scripts/patch_apk.py \
-            --apk turbo-vpn-4.3.2-arm64.apk \
-            --out dist/turbo-vpn-4.3.2-arm64-ads-removed.apk \
+            --apk turbo-vpn-4.3.2.2-arm64.apk \
+            --out dist/turbo-vpn-4.3.2.2-arm64-ads-removed.apk \
             --signer uber-apk-signer.jar
 
       - name: Inspect artifact
@@ -64,7 +64,7 @@ jobs:
       - name: Upload patched APK
         uses: actions/upload-artifact@v4
         with:
-          name: turbo-vpn-4.3.2-arm64-ads-removed
+          name: turbo-vpn-4.3.2.2-arm64-ads-removed
           path: |
             dist/*.apk
             dist/SHA256SUMS

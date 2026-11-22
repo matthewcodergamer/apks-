@@ -1,19 +1,17 @@
-# Turbo VPN — ad removal and 4.3.2.2 analysis
+# Turbo VPN — ad removal, VIP unlock, and 4.3.2.2 analysis
 
-## Patched build (ads removed)
+## Patched build (ads removed + locations unlocked)
 
-`turbo-vpn-4.3.2-arm64.apk` is the complete standalone arm64-v8a build used for
-the patched APK:
+`turbo-vpn-4.3.2.2-arm64.apk` is the complete standalone arm64-v8a build used
+for the patched APK:
 
 - Package: `free.vpn.unblock.proxy.turbovpn`
-- Version: `4.3.2` (`versionCode 2026092311`)
+- Version: `4.3.2.2` (`versionCode 2026102111`)
 - Architecture: `arm64-v8a`
 - Includes `libovpnutil.so`, `libxray.so`, and the other native VPN libraries
 
-The original `Turbo VPN.apk` is the 4.3.2.2 **base** APK from the device. It
-does not contain the ABI splits, so it cannot run without the missing native
-libraries. The complete 4.3.2 standalone is used instead; it is the closest
-complete arm64 build that could be obtained.
+This is the exact version installed on the device, with the ABI libraries that
+the base APK was missing.
 
 ### Workflow
 
@@ -22,17 +20,23 @@ Actions → **Patch Turbo VPN ads** → **Run workflow**.
 The workflow:
 
 1. Disassembles `classes.dex` and `classes5.dex` with baksmali.
-2. Replaces six centralized ad methods with harmless stubs:
+2. Removes the ad surfaces:
    - `co.allconnected.lib.ad.c.q(Context, boolean)` — platform ad-config loader
    - `co.allconnected.lib.ad.BannerAdAgent.f(int, int)` — banner config parser
    - `co.allconnected.lib.ad.AdShow.h(boolean)` — full-screen ad selection
    - `co.allconnected.lib.ad.AdShow.k(boolean)` — full-screen ad list
-   - `E5.H.D()` — AppLuck hover-ad refresh
+   - `D5.H.D()` — AppLuck hover-ad refresh
    - `VpnMainActivity.r4(String)` — `HomeAdActivity` deep-link launcher
-3. Reassembles the two DEX files and replaces only those entries in the APK.
-4. Removes the original signature, zipaligns, and signs with a debug key.
-5. Verifies the signature, alignment, native libraries, and all six stubs.
-6. Uploads `turbo-vpn-4.3.2-arm64-ads-removed.apk` plus `SHA256SUMS`.
+3. Unlocks the VIP server locations:
+   - `k2.A.v()` — always report a VIP user
+   - `k2.A.q(Context)` — use the VIP server lists
+   - `k2.A.i()` — report the maximum VIP level
+   - `k2.A.t()` — disable trial-only restrictions
+   - `k2.A.e()` — prevent VIP-list expiry cleanup
+4. Reassembles the two DEX files and replaces only those entries in the APK.
+5. Removes the original signature, zipaligns, and signs with a debug key.
+6. Verifies the signature, alignment, native libraries, and all eleven stubs.
+7. Uploads `turbo-vpn-4.3.2.2-arm64-ads-removed.apk` plus `SHA256SUMS`.
 
 VPN/native code and resources are left untouched. Because the APK is re-signed,
 Google/Facebook sign-in and Play Billing will not work; the VPN connection is
