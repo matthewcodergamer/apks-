@@ -121,7 +121,7 @@ PATCHES: dict[str, list[dict]] = {
             "class": "Lg2/g;",
             "method": "k",
             "params": "I",
-            "registers": 1,
+            "registers": 2,
             "body": ["const/4 v0, 0x1", "return v0"],
             "why": "enable app debug logging for the in-app log viewer",
         },
