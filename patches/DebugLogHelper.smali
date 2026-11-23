@@ -45,7 +45,7 @@
 
     iget-object v1, v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
 
-    if-eq v1, p1, :create
+    if-eq v1, p0, :create
 
     iget-object v1, v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->e:Landroid/widget/PopupWindow;
 
@@ -71,7 +71,7 @@
     :new
     new-instance v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
 
-    invoke-direct {v0, p1}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;-><init>(Landroid/app/Activity;)V
+    invoke-direct {v0, p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;-><init>(Landroid/app/Activity;)V
 
     sput-object v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->f:Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
 

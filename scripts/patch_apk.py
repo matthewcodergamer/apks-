@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import shutil
 import subprocess
 import sys
@@ -397,6 +398,98 @@ def inject_code(path: Path, spec: dict) -> None:
     log(f"  injected {path}: {spec['method']}({spec['params']})  [{spec['why']}]")
 
 
+def _parameter_register_count(descriptor: str, is_static: bool) -> int:
+    """Count the registers occupied by a method's parameters.
+
+    Wide parameters (J/D) use two registers, objects and arrays use one, and
+    instance methods reserve p0 for ``this``.
+    """
+    inside = descriptor[1 : descriptor.index(")")]
+    count = 0
+    index = 0
+    while index < len(inside):
+        char = inside[index]
+        if char == "[":
+            while index < len(inside) and inside[index] == "[":
+                index += 1
+            if index < len(inside) and inside[index] == "L":
+                index = inside.index(";", index)
+            index += 1
+            count += 1
+        elif char == "L":
+            index = inside.index(";", index) + 1
+            count += 1
+        elif char in "JD":
+            count += 2
+            index += 1
+        else:
+            count += 1
+            index += 1
+    return count + (0 if is_static else 1)
+
+
+def validate_parameter_registers(path: Path) -> None:
+    """Reject pN/vN references outside a method's register file.
+
+    smali accepts p1 in a one-parameter method with .registers 4, but ART then
+    rejects the class with a VerifyError.  This catches that class of bug before
+    the APK is assembled and again after the signed DEX is disassembled.
+    """
+    method: str | None = None
+    is_static = False
+    parameter_registers = 0
+    total_registers: int | None = None
+
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), 1
+    ):
+        stripped = line.strip()
+        if stripped.startswith(".method "):
+            method = stripped
+            is_static = " static " in f" {stripped} "
+            descriptor = re.search(r"\([^)]*\)", stripped)
+            parameter_registers = (
+                _parameter_register_count(descriptor.group(0), is_static)
+                if descriptor
+                else 0
+            )
+            total_registers = None
+            continue
+
+        if method is None:
+            continue
+
+        if stripped.startswith(".registers "):
+            total_registers = int(stripped.split()[1])
+            if total_registers < parameter_registers:
+                raise RuntimeError(
+                    f"{path}:{line_number}: {method} has .registers "
+                    f"{total_registers} but needs {parameter_registers} for "
+                    "its parameters"
+                )
+        elif stripped.startswith(".locals "):
+            total_registers = int(stripped.split()[1]) + parameter_registers
+        elif stripped.startswith(".end method"):
+            method = None
+            total_registers = None
+        elif total_registers is not None:
+            code = re.sub(r'"(?:\\.|[^"\\])*"', '""', stripped)
+            code = code.split("#", 1)[0]
+            for match in re.finditer(r"(?<![\w/$>])p(\d+)(?![\w/$])", code):
+                if int(match.group(1)) >= parameter_registers:
+                    raise RuntimeError(
+                        f"{path}:{line_number}: {method} has only "
+                        f"{parameter_registers} parameter register(s) but "
+                        f"uses p{match.group(1)}"
+                    )
+            for match in re.finditer(r"(?<![\w/$>])v(\d+)(?![\w/$])", code):
+                if int(match.group(1)) >= total_registers:
+                    raise RuntimeError(
+                        f"{path}:{line_number}: {method} has .registers "
+                        f"{total_registers} but uses v{match.group(1)}"
+                    )
+
+
 def assert_injected(path: Path, spec: dict) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     start, end = method_range(lines, spec["method"], spec["params"])
@@ -494,6 +587,7 @@ def main() -> int:
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(PATCH_DIR / source, destination)
+            validate_parameter_registers(destination)
             log(f"  added {destination}")
 
     for dex, specs in INJECTIONS.items():
@@ -606,6 +700,7 @@ def main() -> int:
         for relative, _ in EXTRA_SMALI.get(dex, []):
             if not (verify_dir / relative).is_file():
                 raise RuntimeError(f"extra class missing from signed APK: {relative}")
+            validate_parameter_registers(verify_dir / relative)
             log(f"  verified extra class {relative}")
 
     with zipfile.ZipFile(signed) as archive:
