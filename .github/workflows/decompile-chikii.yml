@@ -7,10 +7,10 @@ on:
         description: APK URL to decompile
         required: false
         default: https://github.com/matthewcodergamer/apks-/releases/download/chikii-4.16.0/Chikii.apk
-      run_apktool:
-        description: Also decode resources and smali with apktool
-        type: boolean
-        default: true
+  push:
+    branches: [main]
+    paths:
+      - 'chikii-trigger/**'
 
 permissions:
   contents: read
@@ -24,11 +24,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
 
+    env:
+      APK_URL: ${{ inputs.apk_url || 'https://github.com/matthewcodergamer/apks-/releases/download/chikii-4.16.0/Chikii.apk' }}
+
     steps:
       - name: Download APK
         run: |
           mkdir -p work
-          curl -fL --retry 3 --retry-delay 5 -o work/chikii.apk "${{ inputs.apk_url }}"
+          curl -fL --retry 3 --retry-delay 5 -o work/chikii.apk "$APK_URL"
           ls -lh work/chikii.apk
           sha256sum work/chikii.apk
 
@@ -54,7 +57,6 @@ jobs:
             work/chikii.apk
 
       - name: Decode with apktool
-        if: inputs.run_apktool
         run: |
           java -Xmx8g -jar /tmp/apktool.jar d -f work/chikii.apk -o work/apktool
 
