@@ -4,8 +4,11 @@
 
 # interfaces
 .implements Landroid/view/View$OnClickListener;
-.implements Landroid/view/View$OnLongClickListener;
 .implements Ljava/lang/Runnable;
+
+
+# static fields
+.field private static f:Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
 
 
 # instance fields
@@ -17,8 +20,11 @@
 
 .field private d:Landroid/os/Handler;
 
+.field private e:Landroid/widget/PopupWindow;
 
-# direct methods
+.field private g:Z
+
+
 .method public constructor <init>(Landroid/app/Activity;)V
     .registers 2
 
@@ -29,188 +35,74 @@
     return-void
 .end method
 
+
 .method public static a(Landroid/app/Activity;)V
-    .registers 8
-
-    invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v0
-
-    const-string v1, "turbo_debug_log"
-
-    invoke-virtual {v0, v1}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
-
-    move-result-object v0
-
-    if-eqz v0, :done
-
-    new-instance v0, Landroid/widget/Button;
-
-    invoke-direct {v0, p0}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V
-
-    const-string v1, "LOG"
-
-    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const-string v1, "turbo_debug_log"
-
-    invoke-virtual {v0, v1}, Landroid/view/View;->setTag(Ljava/lang/Object;)V
-
-    const/4 v1, -0x1
-
-    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setTextColor(I)V
-
-    const/high16 v1, 0x41800000
-
-    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setTextSize(F)V
-
-    const v1, 0xffff0000
-
-    invoke-virtual {v0, v1}, Landroid/view/View;->setBackgroundColor(I)V
-
-    const/16 v1, 0x18
-
-    invoke-virtual {v0, v1, v1, v1, v1}, Landroid/widget/TextView;->setPadding(IIII)V
-
-    new-instance v2, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
-
-    invoke-direct {v2, p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;-><init>(Landroid/app/Activity;)V
-
-    invoke-virtual {v0, v2}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
-
-    invoke-virtual {v0, v2}, Landroid/view/View;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V
-
-    invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
-
-    move-result-object v1
-
-    invoke-virtual {v1}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v1
-
-    if-eqz v1, :done
-
-    check-cast v1, Landroid/view/ViewGroup;
-
-    new-instance v3, Landroid/widget/FrameLayout$LayoutParams;
-
-    const/4 v4, -0x2
-
-    invoke-direct {v3, v4, v4}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
-
-    const/16 v4, 0x30
-
-    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
-
-    const/16 v4, 0x18
-
-    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->leftMargin:I
-
-    const/16 v4, 0xc8
-
-    iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->topMargin:I
-
-    invoke-virtual {v1, v0, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    const-string v1, "Turbo log ready"
-
-    const/4 v3, 0x1
-
-    invoke-static {p0, v1, v3}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
-
-    move-result-object v1
-
-    invoke-virtual {v1}, Landroid/widget/Toast;->show()V
-
-    invoke-virtual {v2, v0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->onClick(Landroid/view/View;)V
-
-    :done
-    return-void
-.end method
-
-
-# virtual methods
-.method public b(Ljava/lang/String;)V
     .registers 4
 
-    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
+    sget-object v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->f:Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
 
-    if-nez v0, :done
+    if-eqz v0, :create
 
-    invoke-virtual {v0, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+    iget-object v1, v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
 
-    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
+    if-eq v1, p1, :create
 
-    if-nez v0, :done
+    iget-object v1, v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->e:Landroid/widget/PopupWindow;
 
-    const/16 v1, 0x82
+    if-eqz v1, :create
 
-    invoke-virtual {v0, v1}, Landroid/widget/ScrollView;->fullScroll(I)Z
+    invoke-virtual {v1}, Landroid/widget/PopupWindow;->isShowing()Z
 
-    :done
+    move-result v1
+
+    if-eqz v1, :create
+
+    return-void
+
+    :create
+    if-eqz v0, :new
+
+    iget-object v1, v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->e:Landroid/widget/PopupWindow;
+
+    if-eqz v1, :new
+
+    invoke-virtual {v1}, Landroid/widget/PopupWindow;->dismiss()V
+
+    :new
+    new-instance v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
+
+    invoke-direct {v0, p1}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;-><init>(Landroid/app/Activity;)V
+
+    sput-object v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->f:Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
+
+    invoke-direct {v0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b()V
+
     return-void
 .end method
 
-.method public onClick(Landroid/view/View;)V
-    .registers 10
+
+.method private b()V
+    .registers 16
 
     iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
 
-    invoke-virtual {v0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+    new-instance v1, Landroid/widget/LinearLayout;
 
-    move-result-object v0
+    invoke-direct {v1, v0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
 
-    invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+    const/4 v2, 0x1
 
-    move-result-object v0
+    invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->setOrientation(I)V
 
-    const-string v1, "turbo_debug_overlay"
+    const v2, 0xff101010
 
-    invoke-virtual {v0, v1}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
-
-    move-result-object v0
-
-    if-eqz v0, :show
-
-    invoke-virtual {v0}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
-
-    move-result-object v1
-
-    if-eqz v1, :clear
-
-    check-cast v1, Landroid/view/ViewGroup;
-
-    invoke-virtual {v1, v0}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
-
-    :clear
-    const/4 v0, 0x0
-
-    iput-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
-
-    iput-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
-
-    return-void
-
-    :show
-    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
-
-    new-instance v1, Landroid/widget/ScrollView;
-
-    invoke-direct {v1, v0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
-
-    const-string v2, "turbo_debug_overlay"
-
-    invoke-virtual {v1, v2}, Landroid/view/View;->setTag(Ljava/lang/Object;)V
+    invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
 
     new-instance v2, Landroid/widget/TextView;
 
     invoke-direct {v2, v0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    const-string v3, "Loading log..."
+    const-string v3, "TURBO VPN LOG   \u2022   TAP HERE TO COPY"
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
@@ -218,91 +110,148 @@
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setTextColor(I)V
 
-    const/high16 v3, 0x41100000
+    const/high16 v3, 0x41700000
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setTextSize(F)V
 
-    sget-object v3, Landroid/graphics/Typeface;->MONOSPACE:Landroid/graphics/Typeface;
+    sget-object v3, Landroid/graphics/Typeface;->DEFAULT_BOLD:Landroid/graphics/Typeface;
 
     invoke-virtual {v2, v3}, Landroid/widget/TextView;->setTypeface(Landroid/graphics/Typeface;)V
 
-    const v3, 0xdd101010
+    const v3, 0xffd50000
 
-    invoke-virtual {v2, v3}, Landroid/view/View;->setBackgroundColor(I)V
+    invoke-virtual {v2, v3}, Landroid/widget/TextView;->setBackgroundColor(I)V
 
-    const/16 v3, 0x8
+    const/16 v3, 0x10
 
     invoke-virtual {v2, v3, v3, v3, v3}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    const/16 v3, 0x14
+    invoke-virtual {v2, p0}, Landroid/widget/TextView;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    invoke-virtual {v2, v3}, Landroid/widget/TextView;->setMaxLines(I)V
+    invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
-    invoke-virtual {v2, p0}, Landroid/widget/TextView;->setOnLongClickListener(Landroid/view/View$OnLongClickListener;)V
+    new-instance v3, Landroid/widget/ScrollView;
 
-    invoke-virtual {v1, v2}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
+    invoke-direct {v3, v0}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
 
-    iput-object v2, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
+    new-instance v4, Landroid/widget/TextView;
 
-    iput-object v1, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
+    invoke-direct {v4, v0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
 
-    invoke-virtual {v0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+    const-string v5, "Reading logcat..."
 
-    move-result-object v3
-
-    invoke-virtual {v3}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v3
-
-    if-eqz v3, :schedule
-
-    check-cast v3, Landroid/view/ViewGroup;
-
-    new-instance v4, Landroid/widget/FrameLayout$LayoutParams;
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
     const/4 v5, -0x1
 
-    const/4 v6, -0x2
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextColor(I)V
 
-    invoke-direct {v4, v5, v6}, Landroid/widget/FrameLayout$LayoutParams;-><init>(II)V
+    const/high16 v5, 0x41200000
 
-    const/16 v5, 0x50
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextSize(F)V
 
-    iput v5, v4, Landroid/widget/FrameLayout$LayoutParams;->gravity:I
+    sget-object v5, Landroid/graphics/Typeface;->MONOSPACE:Landroid/graphics/Typeface;
 
-    const/16 v5, 0x78
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTypeface(Landroid/graphics/Typeface;)V
 
-    iput v5, v4, Landroid/widget/FrameLayout$LayoutParams;->bottomMargin:I
+    const v5, 0xff000000
 
-    invoke-virtual {v3, v1, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setBackgroundColor(I)V
 
-    :schedule
-    iget-object v3, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->d:Landroid/os/Handler;
+    const/16 v5, 0x8
 
-    if-nez v3, :have_handler
+    invoke-virtual {v4, v5, v5, v5, v5}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance v3, Landroid/os/Handler;
+    invoke-virtual {v4, p0}, Landroid/widget/TextView;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
-    invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
+    invoke-virtual {v3, v4}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
 
-    move-result-object v4
+    new-instance v5, Landroid/widget/LinearLayout$LayoutParams;
 
-    invoke-direct {v3, v4}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
+    const/4 v6, -0x1
 
-    iput-object v3, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->d:Landroid/os/Handler;
+    const/4 v7, 0x0
 
-    :have_handler
-    invoke-virtual {v3, p0}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+    invoke-direct {v5, v6, v7}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
+
+    const/high16 v6, 0x3f800000
+
+    iput v6, v5, Landroid/widget/LinearLayout$LayoutParams;->weight:F
+
+    invoke-virtual {v1, v3, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    iput-object v4, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
+
+    iput-object v3, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
+
+    invoke-virtual {v0}, Landroid/app/Activity;->getResources()Landroid/content/res/Resources;
+
+    move-result-object v5
+
+    invoke-virtual {v5}, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;
+
+    move-result-object v5
+
+    iget v5, v5, Landroid/util/DisplayMetrics;->heightPixels:I
+
+    const/16 v6, 0x1e
+
+    mul-int/2addr v5, v6
+
+    const/16 v6, 0x64
+
+    div-int/2addr v5, v6
+
+    new-instance v6, Landroid/widget/PopupWindow;
+
+    const/4 v7, -0x1
+
+    const/4 v8, 0x0
+
+    invoke-direct {v6, v1, v7, v5, v8}, Landroid/widget/PopupWindow;-><init>(Landroid/view/View;IIZ)V
+
+    invoke-virtual {v6, v8}, Landroid/widget/PopupWindow;->setFocusable(Z)V
+
+    const/4 v9, 0x1
+
+    invoke-virtual {v6, v9}, Landroid/widget/PopupWindow;->setTouchable(Z)V
+
+    invoke-virtual {v6, v8}, Landroid/widget/PopupWindow;->setOutsideTouchable(Z)V
+
+    new-instance v9, Landroid/graphics/drawable/ColorDrawable;
+
+    const v10, 0xff101010
+
+    invoke-direct {v9, v10}, Landroid/graphics/drawable/ColorDrawable;-><init>(I)V
+
+    invoke-virtual {v6, v9}, Landroid/widget/PopupWindow;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
+
+    const/high16 v9, 0x41c00000
+
+    invoke-virtual {v6, v9}, Landroid/widget/PopupWindow;->setElevation(F)V
+
+    iput-object v6, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->e:Landroid/widget/PopupWindow;
+
+    invoke-virtual {v0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+
+    move-result-object v5
+
+    invoke-virtual {v5}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+
+    move-result-object v5
+
+    invoke-virtual {v5, p0}, Landroid/view/View;->post(Ljava/lang/Runnable;)Z
 
     return-void
 .end method
 
-.method public onLongClick(Landroid/view/View;)Z
-    .registers 6
+
+.method private c()V
+    .registers 5
 
     iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
 
-    if-nez v0, :false
+    if-nez v0, :done
 
     invoke-virtual {v0}, Landroid/widget/TextView;->getText()Ljava/lang/CharSequence;
 
@@ -332,9 +281,9 @@
 
     iget-object v1, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
 
-    const-string v2, "Log copied"
+    const-string v2, "LOG COPIED - paste it in the chat"
 
-    const/4 v3, 0x0
+    const/4 v3, 0x1
 
     invoke-static {v1, v2, v3}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
 
@@ -342,19 +291,102 @@
 
     invoke-virtual {v1}, Landroid/widget/Toast;->show()V
 
+    :done
+    return-void
+.end method
+
+
+# virtual methods
+.method public b(Ljava/lang/String;)V
+    .registers 4
+
+    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
+
+    if-nez v0, :done
+
+    invoke-virtual {v0, p1}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c:Landroid/widget/ScrollView;
+
+    if-nez v0, :scroll
+
+    const/16 v1, 0x82
+
+    invoke-virtual {v0, v1}, Landroid/widget/ScrollView;->fullScroll(I)Z
+
+    :scroll
+    iget-boolean v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->g:Z
+
+    if-eqz v0, :done
+
+    invoke-direct {p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c()V
+
     const/4 v0, 0x1
 
-    return v0
+    iput-boolean v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->g:Z
 
-    :false
-    const/4 v0, 0x0
+    :done
+    return-void
+.end method
 
-    return v0
+.method public onClick(Landroid/view/View;)V
+    .registers 2
+
+    invoke-direct {p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->c()V
+
+    return-void
 .end method
 
 .method public run()V
-    .registers 5
+    .registers 6
 
+    sget-object v0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->f:Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;
+
+    if-eq v0, p0, :done
+
+    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
+
+    invoke-virtual {v0}, Landroid/app/Activity;->isFinishing()Z
+
+    move-result v1
+
+    if-eqz v1, :done
+
+    iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->e:Landroid/widget/PopupWindow;
+
+    if-eqz v0, :refresh
+
+    invoke-virtual {v0}, Landroid/widget/PopupWindow;->isShowing()Z
+
+    move-result v1
+
+    if-eqz v1, :refresh
+
+    iget-object v1, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a:Landroid/app/Activity;
+
+    invoke-virtual {v1}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+
+    move-result-object v1
+
+    if-eqz v1, :refresh
+
+    const/16 v2, 0x30
+
+    const/4 v3, 0x0
+
+    :try_start_show
+    invoke-virtual {v0, v1, v2, v3, v3}, Landroid/widget/PopupWindow;->showAtLocation(Landroid/view/View;III)V
+    :try_end_show
+    goto :refresh
+
+    :catch_show
+    move-exception v1
+
+    :refresh
     iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->b:Landroid/widget/TextView;
 
     if-nez v0, :done
@@ -371,12 +403,26 @@
 
     iget-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->d:Landroid/os/Handler;
 
-    if-eqz v0, :done
+    if-nez v0, :have_handler
 
+    new-instance v0, Landroid/os/Handler;
+
+    invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
+
+    move-result-object v1
+
+    invoke-direct {v0, v1}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
+
+    iput-object v0, p0, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->d:Landroid/os/Handler;
+
+    :have_handler
     const-wide/16 v1, 0x5dc
 
     invoke-virtual {v0, p0, v1, v2}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 
     :done
     return-void
+
+    .catch Landroid/view/WindowManager$BadTokenException; {:try_start_show .. :try_end_show} :catch_show
+    .catch Ljava/lang/RuntimeException; {:try_start_show .. :try_end_show} :catch_show
 .end method

@@ -252,7 +252,30 @@ PATCHES: dict[str, list[dict]] = {
 
 # Code inserted at the start of an existing method instead of replacing it.
 INJECTIONS: dict[str, list[dict]] = {
+    "classes.dex": [
+        {
+            "file": "co/allconnected/lib/VpnAgent.smali",
+            "class": "Lco/allconnected/lib/VpnAgent;",
+            "method": "E0",
+            "params": "Lco/allconnected/lib/model/VpnServer;Z",
+            "code": [
+                "invoke-static {p1}, Lfree/vpn/unblock/proxy/turbovpn/debug/FreeServerPicker;->a(Lco/allconnected/lib/model/VpnServer;)Lco/allconnected/lib/model/VpnServer;",
+                "move-result-object p1",
+            ],
+            "why": "replace a VIP server with a free server right before connecting",
+        }
+    ],
     "classes5.dex": [
+        {
+            "file": "free/vpn/unblock/proxy/turbovpn/activity/StartupActivity.smali",
+            "class": "Lfree/vpn/unblock/proxy/turbovpn/activity/StartupActivity;",
+            "method": "onCreate",
+            "params": "Landroid/os/Bundle;",
+            "code": [
+                "invoke-static {p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a(Landroid/app/Activity;)V"
+            ],
+            "why": "show the log overlay on the first activity, before the VPN permission dialog",
+        },
         {
             "file": "free/vpn/unblock/proxy/turbovpn/activity/VpnMainActivity.smali",
             "class": "Lfree/vpn/unblock/proxy/turbovpn/activity/VpnMainActivity;",
@@ -261,13 +284,19 @@ INJECTIONS: dict[str, list[dict]] = {
             "code": [
                 "invoke-static {p0}, Lfree/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper;->a(Landroid/app/Activity;)V"
             ],
-            "why": "add the in-app LOG button",
-        }
-    ]
+            "why": "show the log overlay on the main activity",
+        },
+    ],
 }
 
 # Extra smali classes copied into a DEX before assembly.
 EXTRA_SMALI: dict[str, list[tuple[str, str]]] = {
+    "classes.dex": [
+        (
+            "free/vpn/unblock/proxy/turbovpn/debug/FreeServerPicker.smali",
+            "FreeServerPicker.smali",
+        ),
+    ],
     "classes5.dex": [
         (
             "free/vpn/unblock/proxy/turbovpn/debug/DebugLogHelper.smali",
@@ -277,7 +306,7 @@ EXTRA_SMALI: dict[str, list[tuple[str, str]]] = {
             "free/vpn/unblock/proxy/turbovpn/debug/DebugLogTask.smali",
             "DebugLogTask.smali",
         ),
-    ]
+    ],
 }
 
 PATCH_DIR = Path(__file__).resolve().parent.parent / "patches"

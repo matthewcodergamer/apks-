@@ -6,13 +6,15 @@ Latest patched build:
 
 **https://github.com/matthewcodergamer/apks-/releases/download/v4.3.2.2-ads-vip/turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk**
 
-- Size: `51,357,896` bytes
-- SHA-256: `ed2e4072c65b98b262147ac2da89ec967c62366d368173ba235e4703022a5102`
+- Size: `51,361,992` bytes
+- SHA-256: `7cb8ace56d2ede08dcde6656805883b07d068c5f4bc1a346a4161792bfaacc72`
 
 Uninstall any older Turbo VPN build first (the signature is different). If the
-connection still fails, the log panel opens automatically at the bottom of the
-main screen and refreshes every 1.5 seconds. Tap **LOG** to toggle it, and
-long-press the **LOG** button or the log panel to copy the log.
+connection still fails, a full-width red **TURBO VPN LOG** bar appears at the top
+of the screen on launch and on the main screen. The black panel under it shows
+the last logcat lines and refreshes every 1.5 seconds. The first log is copied
+automatically. After a disconnect, tap the red bar to copy the latest log and
+paste it in the chat.
 
 ## Patched build (ads removed + locations unlocked)
 
@@ -58,15 +60,19 @@ The workflow:
    - `VpnServer.compareTo(VpnServer)` — sort free servers before VIP servers, so
      the default connection uses a free server while VIP locations stay in the
      list
-5. Enables the app's own debug logging (`g2.g.k(int)`) and injects a **LOG**
-   button into `VpnMainActivity`. The non-modal bottom overlay opens on launch
-   and refreshes the last 400 logcat lines every 1.5 seconds. Tap **LOG** to
-   toggle it; long-press **LOG** or the overlay to copy the log, so
-   connection/API errors can be captured on the device without ADB.
+   - `VpnAgent.E0(VpnServer, boolean)` — replace a selected VIP server with a
+     free server right before the tunnel starts, because VIP nodes reject a
+     non-VIP account server-side
+5. Enables the app's own debug logging (`g2.g.k(int)`) and injects the log
+   overlay into `StartupActivity.onCreate` and `VpnMainActivity.onResume`. The
+   overlay is a full-width red **TURBO VPN LOG** bar with a black log panel under
+   it. It opens on launch, refreshes the last 400 logcat lines every 1.5 seconds,
+   copies the first log automatically, and copies the latest log when the red bar
+   is tapped.
 6. Reassembles the two DEX files and replaces only those entries in the APK.
 7. Removes the original signature, zipaligns, and signs with a debug key.
 8. Verifies the signature, alignment, native libraries, every stub, the
-   injected classes, and the LOG button hook.
+   injected classes, the free-server substitution, and both log-overlay hooks.
 9. Uploads `turbo-vpn-4.3.2.2-arm64-ads-vip-log.apk` plus `SHA256SUMS`.
 
 VPN/native code and resources are left untouched. Because the APK is re-signed,
