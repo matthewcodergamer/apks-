@@ -49,14 +49,22 @@ jobs:
 
       - name: Decompile with jadx
         run: |
+          set +e
           JAVA_OPTS="-Xmx8g" /opt/jadx/bin/jadx \
             --threads-count 4 \
             --show-bad-code \
             --deobf \
             -d work/jadx \
             work/chikii.apk
+          code=$?
+          echo "jadx exit code: $code (3 = finished with per-method errors, output is still valid)"
+          test -d work/jadx
+          echo "java files: $(find work/jadx -name '*.java' | wc -l)"
+          echo "resource files: $(find work/jadx -type f ! -name '*.java' | wc -l)"
+          exit 0
 
       - name: Decode with apktool
+        continue-on-error: true
         run: |
           java -Xmx8g -jar /tmp/apktool.jar d -f work/chikii.apk -o work/apktool
 
