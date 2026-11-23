@@ -1,0 +1,131 @@
+name: Decompile YouTube
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: APK URL to decompile
+        required: false
+        default: https://github.com/matthewcodergamer/apks-/releases/download/youtube-21.45.88/YouTube.apk
+
+permissions:
+  contents: write
+
+concurrency:
+  group: youtube-decompile
+  cancel-in-progress: true
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      APK_URL: ${{ inputs.apk_url || 'https://github.com/matthewcodergamer/apks-/releases/download/youtube-21.45.88/YouTube.apk' }}
+      RELEASE_TAG: youtube-21.45.88-decompiled
+
+    steps:
+      - name: Download APK
+        run: |
+          mkdir -p work
+          curl -fL --retry 5 --retry-delay 5 -o work/youtube.apk "$APK_URL"
+          ls -lh work/youtube.apk
+          sha256sum work/youtube.apk | tee work/youtube.sha256
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt zip unzip curl
+          curl -fL --retry 3 -o /tmp/jadx.zip \
+            https://github.com/skylot/jadx/releases/download/v1.5.7/jadx-1.5.7.zip
+          sudo mkdir -p /opt/jadx
+          sudo unzip -q /tmp/jadx.zip -d /opt/jadx
+          sudo chmod +x /opt/jadx/bin/jadx
+          curl -fL --retry 3 -o /tmp/apktool.jar \
+            https://github.com/iBotPeaches/Apktool/releases/download/v3.0.3/apktool_3.0.3.jar
+          /opt/jadx/bin/jadx --version
+          java -jar /tmp/apktool.jar --version
+
+      - name: Decompile Java with jadx
+        run: |
+          set +e
+          JAVA_OPTS="-Xmx10g" /opt/jadx/bin/jadx \
+            --no-res \
+            --show-bad-code \
+            --threads-count 4 \
+            -d work/jadx \
+            work/youtube.apk
+          code=$?
+          echo "jadx exit code: $code (3 = finished with per-method errors; output is still valid)"
+          test -d work/jadx
+          echo "java files: $(find work/jadx -name '*.java' | wc -l)"
+          du -sh work/jadx
+          exit 0
+
+      - name: Decode resources with apktool
+        continue-on-error: true
+        run: |
+          java -Xmx8g -jar /tmp/apktool.jar d -f -s work/youtube.apk -o work/apktool
+          du -sh work/apktool
+
+      - name: Write summary
+        run: |
+          {
+            echo "# YouTube decompile summary"
+            echo
+            echo "## APK"
+            sha256sum work/youtube.apk
+            aapt dump badging work/youtube.apk | head -6
+            echo
+            echo "## Output"
+            echo "Java files: $(find work/jadx -name '*.java' | wc -l)"
+            echo "DEX files in APK: $(unzip -l work/youtube.apk | grep -cE 'classes[0-9]*\\.dex')"
+            echo
+            echo "## Top-level packages"
+            find work/jadx/sources -mindepth 1 -maxdepth 3 -type d 2>/dev/null \
+              | sed 's#work/jadx/sources/##' | sort | head -80
+          } | tee work/youtube-summary.txt
+
+      - name: Package output
+        run: |
+          cd work
+          zip -qr youtube-jadx.zip jadx
+          if [ -d apktool ]; then
+            zip -qr youtube-apktool.zip apktool
+          fi
+          ls -lh youtube-jadx.zip youtube-summary.txt
+          if [ -f youtube-apktool.zip ]; then
+            ls -lh youtube-apktool.zip
+          fi
+
+      - name: Publish to draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd work
+          files=(youtube-jadx.zip youtube-summary.txt)
+          if [ -f youtube-apktool.zip ]; then
+            files+=(youtube-apktool.zip)
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${files[@]}" \
+              --draft \
+              --title "YouTube 21.45.88 decompiled" \
+              --notes "Decompiled from the original YouTube 21.45.88 APK.
+
+- jadx 1.5.7 with --no-res
+- apktool 3.0.3 with -s (resources and manifest only)
+- Input SHA-256: $(cut -d' ' -f1 youtube.sha256)
+
+This is a draft release so the decompiled sources are not public. Download the assets you need, then publish or delete the release."
+          fi
+          gh release view "$RELEASE_TAG" --json url,assets --jq '{url: .url, assets: [.assets[].name]}'
+
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-summary
+          path: work/youtube-summary.txt
+          retention-days: 30
