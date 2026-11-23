@@ -7,6 +7,10 @@ on:
         description: APK URL to decompile
         required: false
         default: https://github.com/matthewcodergamer/apks-/releases/download/youtube-21.45.88/YouTube.apk
+  push:
+    branches: [main]
+    paths:
+      - 'youtube-trigger/**'
 
 permissions:
   contents: write
